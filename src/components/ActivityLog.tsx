@@ -93,6 +93,11 @@ export const ActivityLog: React.FC<ActivityLogProps> = ({ activities, onUndo }) 
               <p className="text-sm text-gray-900 dark:text-white">
                 {getActionText(activity)}
               </p>
+              {activity.note && (
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 italic">
+                  Note: {activity.note}
+                </p>
+              )}
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 {formatDate(activity.timestamp)}
               </p>

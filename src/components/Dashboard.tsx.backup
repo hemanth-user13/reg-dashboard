@@ -5,11 +5,8 @@ import { RegulationCard } from './RegulationCard';
 import { RegulationModal } from './RegulationModal';
 import { BulkActions } from './BulkActions';
 import { ActivityLog } from './ActivityLog';
-import { StatsWidget } from './StatsWidget';
-import { MoveEditor } from './MoveEditor';
-import { BulkMoveEditor } from './BulkMoveEditor';
 import { useTheme } from '../contexts/ThemeContext';
-import { Moon, Sun, Activity, Download } from 'lucide-react';
+import { Moon, Sun, Activity } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -32,8 +29,6 @@ export const Dashboard: React.FC = () => {
   const [draggedRegulation, setDraggedRegulation] = useState<Regulation | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<RegulationCategory | null>(null);
   const [showActivityLog, setShowActivityLog] = useState(false);
-  const [moveEditorData, setMoveEditorData] = useState<{ regulation: Regulation; targetCategory: RegulationCategory } | null>(null);
-  const [bulkMoveEditorData, setBulkMoveEditorData] = useState<{ regulations: Regulation[]; targetCategory: RegulationCategory } | null>(null);
 
   const cardConfigs: CardConfig[] = [
     { id: 'personal', title: 'Personal Regulations', color: 'blue' },
@@ -64,65 +59,19 @@ export const Dashboard: React.FC = () => {
   const handleDrop = (e: React.DragEvent, category: RegulationCategory) => {
     e.preventDefault();
     if (draggedRegulation && draggedRegulation.category !== category) {
-      setMoveEditorData({ regulation: draggedRegulation, targetCategory: category });
+      moveRegulation(draggedRegulation.id, category);
     }
     setDragOverCategory(null);
     setDraggedRegulation(null);
   };
 
   const handleBulkMove = (targetCategory: RegulationCategory) => {
-    const regsToMove = regulations.filter(r => selectedIds.has(r.id));
-    setBulkMoveEditorData({ regulations: regsToMove, targetCategory });
+    moveMultiple(Array.from(selectedIds), targetCategory);
   };
 
   const handleMove = (id: string, category: RegulationCategory) => {
-    const regulation = regulations.find(r => r.id === id);
-    if (regulation) {
-      setMoveEditorData({ regulation, targetCategory: category });
-    }
-  };
-
-  const handleMoveConfirm = (note: string) => {
-    if (moveEditorData) {
-      moveRegulation(moveEditorData.regulation.id, moveEditorData.targetCategory, note);
-      setMoveEditorData(null);
-      setSelectedRegulation(null);
-    }
-  };
-
-  const handleBulkMoveConfirm = (notes: Map<string, string>) => {
-    if (bulkMoveEditorData) {
-      moveMultiple(
-        bulkMoveEditorData.regulations.map(r => r.id),
-        bulkMoveEditorData.targetCategory,
-        notes
-      );
-      setBulkMoveEditorData(null);
-    }
-  };
-
-  const exportToCSV = () => {
-    const headers = ['Title', 'Category', 'Status', 'Tags', 'Updated'];
-    const rows = regulations.map(r => [
-      r.title,
-      r.category,
-      r.status,
-      r.tags.join('; '),
-      r.updatedAt.toLocaleDateString()
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `regulations-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    moveRegulation(id, category);
+    setSelectedRegulation(null);
   };
 
   return (
@@ -139,14 +88,6 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-all"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export</span>
-            </button>
-
             <button
               onClick={() => setShowActivityLog(!showActivityLog)}
               className={`
@@ -174,8 +115,6 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
         </div>
-
-        <StatsWidget regulations={regulations} />
 
         {showActivityLog && (
           <div className="mb-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800 p-6">
@@ -229,24 +168,6 @@ export const Dashboard: React.FC = () => {
           onToggleRelevant={toggleRelevant}
           onAddTag={addTag}
           onRemoveTag={removeTag}
-        />
-      )}
-
-      {moveEditorData && (
-        <MoveEditor
-          regulation={moveEditorData.regulation}
-          targetCategory={moveEditorData.targetCategory}
-          onConfirm={handleMoveConfirm}
-          onCancel={() => setMoveEditorData(null)}
-        />
-      )}
-
-      {bulkMoveEditorData && (
-        <BulkMoveEditor
-          regulations={bulkMoveEditorData.regulations}
-          targetCategory={bulkMoveEditorData.targetCategory}
-          onConfirm={handleBulkMoveConfirm}
-          onCancel={() => setBulkMoveEditorData(null)}
         />
       )}
 

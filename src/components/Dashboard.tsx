@@ -8,8 +8,13 @@ import { ActivityLog } from './ActivityLog';
 import { StatsWidget } from './StatsWidget';
 import { MoveEditor } from './MoveEditor';
 import { BulkMoveEditor } from './BulkMoveEditor';
+import { GlobalSearch } from './GlobalSearch';
+import { KeyboardShortcuts } from './KeyboardShortcuts';
+import { OnboardingTour } from './OnboardingTour';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { QuickActions } from './QuickActions';
 import { useTheme } from '../contexts/ThemeContext';
-import { Moon, Sun, Activity, Download } from 'lucide-react';
+import { Moon, Sun, Activity, Download, BarChart3 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -32,6 +37,7 @@ export const Dashboard: React.FC = () => {
   const [draggedRegulation, setDraggedRegulation] = useState<Regulation | null>(null);
   const [dragOverCategory, setDragOverCategory] = useState<RegulationCategory | null>(null);
   const [showActivityLog, setShowActivityLog] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [moveEditorData, setMoveEditorData] = useState<{ regulation: Regulation; targetCategory: RegulationCategory } | null>(null);
   const [bulkMoveEditorData, setBulkMoveEditorData] = useState<{ regulations: Regulation[]; targetCategory: RegulationCategory } | null>(null);
 
@@ -139,27 +145,23 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 font-medium transition-all"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export</span>
-            </button>
+            <GlobalSearch regulations={regulations} onSelect={setSelectedRegulation} />
 
             <button
-              onClick={() => setShowActivityLog(!showActivityLog)}
+              onClick={() => setShowAnalytics(!showAnalytics)}
               className={`
-                flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all
-                ${showActivityLog
+                hidden lg:flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all
+                ${showAnalytics
                   ? 'bg-blue-600 dark:bg-blue-500 text-white'
                   : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                 }
               `}
             >
-              <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Activity</span>
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden xl:inline">Analytics</span>
             </button>
+
+            <KeyboardShortcuts />
 
             <button
               onClick={toggleTheme}
@@ -176,6 +178,12 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <StatsWidget regulations={regulations} />
+
+        {showAnalytics && (
+          <div className="mt-6 mb-6">
+            <AnalyticsDashboard regulations={regulations} activityLog={activityLog} />
+          </div>
+        )}
 
         {showActivityLog && (
           <div className="mb-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-800 p-6">
@@ -249,6 +257,15 @@ export const Dashboard: React.FC = () => {
           onCancel={() => setBulkMoveEditorData(null)}
         />
       )}
+
+      <OnboardingTour onComplete={() => {}} />
+
+      <QuickActions
+        onExport={exportToCSV}
+        onShowAnalytics={() => setShowAnalytics(!showAnalytics)}
+        onShowActivity={() => setShowActivityLog(!showActivityLog)}
+        activityCount={activityLog.length}
+      />
 
       <BulkActions
         selectedCount={selectedIds.size}
